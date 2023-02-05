@@ -11,14 +11,11 @@ export function isObject<T>(shape?: { [K in keyof T]: Parser<T[K]> }):
   | Parser<WithOptionals<T>>
   | Parser<object> {
   if (!shape) {
-    return new Checker<object>(
-      (x) => isPlainObject(x),
-      "is not a plain object"
-    );
+    return new Checker((x) => isPlainObject(x), "is not a plain object");
   }
   const keys = Object.keys(shape) as (keyof T)[];
 
-  if (keys.every((k) => shape[k] instanceof Checker)) {
+  if (keys.every((k) => !shape[k].altering)) {
     return (isObject() as Parser<WithOptionals<T>>).req((x) =>
       keys.every(
         (k) =>

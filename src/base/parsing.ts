@@ -14,9 +14,13 @@ export function failure<T>(error: NonNullable<unknown>): Result<T> {
   return { ok: false, error };
 }
 
-export abstract class Parser<T> {
-  protected prev?: Parser<unknown>;
-  abstract process(r: Result<unknown>): Result<T>;
+export class Parser<T, I = unknown> {
+  protected prev?: Parser<I>;
+
+  constructor(
+    public readonly altering: boolean,
+    private readonly process: (r: Result<I>) => Result<T>
+  ) {}
 
   parse(x: unknown): Result<T> {
     if (this.prev) {
@@ -26,52 +30,57 @@ export abstract class Parser<T> {
       }
       return this.process(res);
     }
-    return this.process(success(x));
+    return this.process(success(x as I)); // FIXME
   }
 
   req(check: (x: T) => boolean, failMsg = "check failed"): Parser<T> {
-    return new Checker(check, failMsg, this);
+    const p = new Checker(check, failMsg);
+    p.prev = this as Parser<T>;
+    return p as Parser<T>;
   }
 
   mod<R>(tr: (x: T) => R): Parser<R> {
-    return new Transformer<T, R>(tr, this);
+    const p = new Transformer(tr);
+    p.prev = this as Parser<T>;
+    return p as Parser<R>;
+  }
+
+  fallback<R>(v: R): Parser<T | R, T> {
+    const p = new Parser<T | R, T>(
+      true,
+      (r: Result<T>): Result<T | R> => (r.ok ? r : success(v as R))
+    );
+    p.prev = this as Parser<T>;
+    return p;
   }
 }
 
-export class Checker<T, I = unknown> extends Parser<T> {
+export class Checker<T, I = T> extends Parser<T, I> {
   constructor(
     private readonly check: (x: I) => boolean,
-    private failMsg: string,
-    protected override prev?: Parser<unknown>
+    private failMsg: string
   ) {
-    super();
-  }
-
-  process(r: Result<I>): Result<T> {
-    if (!r.ok || this.check(r.value)) {
-      return r as Result<T>;
-    }
-    return failure(new TypeError(this.failMsg));
+    super(false, (r) => {
+      if (!r.ok || this.check(r.value)) {
+        return r as Result<T>;
+      }
+      return failure(new TypeError(this.failMsg));
+    });
   }
 }
 
-export class Transformer<I, T> extends Parser<T> {
-  constructor(
-    private readonly transform: (x: I) => T,
-    protected override prev?: Parser<unknown>
-  ) {
-    super();
-  }
+export class Transformer<T, I> extends Parser<T, I> {
+  constructor(private readonly transform: (x: I) => T) {
+    super(true, (r) => {
+      if (!r.ok) {
+        return r;
+      }
 
-  process(r: Result<I>): Result<T> {
-    if (!r.ok) {
-      return r;
-    }
-
-    try {
-      return success(this.transform(r.value));
-    } catch (error) {
-      return failure(error ?? new TypeError("unexpected error"));
-    }
+      try {
+        return success(this.transform(r.value));
+      } catch (error) {
+        return failure(error ?? new TypeError("unexpected error"));
+      }
+    });
   }
 }

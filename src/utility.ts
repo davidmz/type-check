@@ -1,13 +1,12 @@
 import type { Parser } from "./base/parsing";
-import { Transformer } from "./base/parsing";
-import { Checker } from "./base/parsing";
+import { Checker, Transformer } from "./base/parsing";
 
 export type Parsed<T> = T extends Parser<infer V> ? V : never;
 
 export function isOneOf<T extends [unknown, unknown, ...unknown[]]>(
   ...parsers: { [K in keyof T]: Parser<T[K]> }
 ): Parser<T[number]> {
-  if (parsers.every((p) => p instanceof Checker)) {
+  if (parsers.every((p) => !p.altering)) {
     return new Checker(
       (x) => parsers.some((p) => p.parse(x).ok),
       "is not matches any given types"

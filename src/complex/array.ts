@@ -15,7 +15,7 @@ export function isArray<T>(
     return isArray().req((x) => x.length === p, "has invalid length");
   }
 
-  if (p instanceof Checker) {
+  if (!p.altering) {
     return isArray().req(
       (x) => x.every((it) => p.parse(it).ok),
       "is not an array of given type"
