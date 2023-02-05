@@ -39,4 +39,20 @@ describe("Primitives", () => {
     }
     expect(data).toEqual(["foo", "bar"]);
   });
+
+  it(`should parse and create modified copy of array (2)`, () => {
+    const data = ["foo", "bar"];
+    const parser = isArray(
+      isString()
+        .mod((x) => x.toUpperCase())
+        .req(() => true) // noop, but has .altering === false
+    );
+    const result = parser.parse(data);
+
+    expect(result).toEqual({ ok: true, value: ["FOO", "BAR"] });
+    if (result.ok) {
+      expect(result.value).not.toBe(data);
+    }
+    expect(data).toEqual(["foo", "bar"]);
+  });
 });

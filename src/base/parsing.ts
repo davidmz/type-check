@@ -18,9 +18,13 @@ export class Parser<T, I = unknown> {
   protected prev?: Parser<I>;
 
   constructor(
-    public readonly altering: boolean,
+    private readonly _altering: boolean,
     private readonly process: (r: Result<I>) => Result<T>
   ) {}
+
+  get altering(): boolean {
+    return this.prev?.altering || this._altering;
+  }
 
   parse(x: unknown): Result<T> {
     if (this.prev) {
