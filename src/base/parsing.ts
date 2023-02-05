@@ -15,12 +15,12 @@ export function failure<T>(error: NonNullable<unknown>): Result<T> {
 }
 
 export abstract class Parser<T> {
-  protected parent?: Parser<unknown>;
+  protected prev?: Parser<unknown>;
   abstract process(r: Result<unknown>): Result<T>;
 
   parse(x: unknown): Result<T> {
-    if (this.parent) {
-      const res = this.parent.parse(x);
+    if (this.prev) {
+      const res = this.prev.parse(x);
       if (!res.ok) {
         return res;
       }
@@ -42,7 +42,7 @@ export class Checker<T, I = unknown> extends Parser<T> {
   constructor(
     private readonly check: (x: I) => boolean,
     private failMsg: string,
-    protected override parent?: Parser<unknown>
+    protected override prev?: Parser<unknown>
   ) {
     super();
   }
@@ -58,7 +58,7 @@ export class Checker<T, I = unknown> extends Parser<T> {
 export class Transformer<I, T> extends Parser<T> {
   constructor(
     private readonly transform: (x: I) => T,
-    protected override parent?: Parser<unknown>
+    protected override prev?: Parser<unknown>
   ) {
     super();
   }
