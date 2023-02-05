@@ -1,7 +1,7 @@
 import type { Parser } from "./base/parsing";
 import { Checker } from "./base/parsing";
 
-function typeChecker<T>(type: string, m = "is not a " + type): () => Parser<T> {
+function typeChecker<T>(type: string, m = `is not a ${type}`): () => Parser<T> {
   return () => new Checker((x) => typeof x === type, m);
 }
 

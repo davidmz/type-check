@@ -16,6 +16,7 @@
   "rules": {
     "no-console": "error",
     "max-depth": ["error", 2],
+    "prefer-template": "error",
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
     "@typescript-eslint/consistent-type-imports": "error",
