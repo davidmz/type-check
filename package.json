@@ -17,7 +17,7 @@
   "types": "build/esm/index.d.ts",
   "scripts": {
     "clean": "del-cli build/cjs build/esm",
-    "build": "eslint && tsc && tsc -p ./tsconfig.esm.json",
+    "build": "eslint src && tsc && tsc -p ./tsconfig.esm.json",
     "test": "vitest --run",
     "test-watch": "vitest",
     "lint": "eslint src",
