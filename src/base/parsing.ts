@@ -55,7 +55,7 @@ export class Checker<T, I = T> extends Parser<T, I> {
       if (!r.ok || this.check(r.value)) {
         return r as Result<T>;
       }
-      return failure(new TypeError(this.failMsg));
+      return failure(this.failMsg);
     });
   }
 }
@@ -70,7 +70,7 @@ export class Transformer<T, I> extends Parser<T, I> {
       try {
         return success(this.transform(r.value));
       } catch (error) {
-        return failure(error ?? new TypeError("unexpected error"));
+        return failure(error);
       }
     });
   }
