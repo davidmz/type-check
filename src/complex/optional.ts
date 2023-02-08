@@ -28,6 +28,8 @@ export type WithOptionals<T> = Flat<
   WithOptionalValues<T> & WithRequiredValues<T>
 >;
 
+export type OptKeys<T> = keyof WithOptionals<T>;
+
 const optionalParsers = new WeakSet<Parser<unknown>>();
 
 export function isOptional<T>(p: Parser<T>) {

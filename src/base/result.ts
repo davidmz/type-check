@@ -12,7 +12,7 @@ export function success<T>(value: T): Result<T> {
   return { ok: true, value };
 }
 
-export function failure<T>(error: unknown): Result<T> {
+export function failure<T>(error: unknown, prependPath = ""): Result<T> {
   let parseError: ParseError;
   if (error instanceof ParseError) {
     parseError = error;
@@ -23,6 +23,8 @@ export function failure<T>(error: unknown): Result<T> {
   } else {
     parseError = new ParseError("threw unexpected error");
   }
+
+  parseError.prependPath(prependPath);
 
   return { ok: false, error: parseError };
 }

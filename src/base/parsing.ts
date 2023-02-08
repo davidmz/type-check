@@ -14,26 +14,25 @@ export class Parser<T, I = unknown> {
   }
 
   parse(x: unknown): Result<T> {
-    if (this.prev) {
-      const res = this.prev.parse(x);
-      if (!res.ok) {
-        return res;
-      }
-      return this.process(res);
-    }
-    return this.process(success(x as I)); // FIXME
+    return this.process(this.prev ? this.prev.parse(x) : success(x as I));
   }
 
   req(check: (x: T) => boolean, failMsg = "check failed"): Parser<T> {
-    const p = new Checker(check, failMsg);
-    p.prev = this as Parser<T>;
-    return p as Parser<T>;
+    return this.next(new Checker(check, failMsg)) as Parser<T>;
   }
 
   mod<R>(tr: (x: T) => R): Parser<R> {
-    const p = new Transformer(tr);
+    return this.next(new Transformer(tr)) as Parser<R>;
+  }
+
+  clone(): Parser<T, I> {
+    return this.req(() => true);
+  }
+
+  next<U>(p: Parser<U, T>): Parser<U, T> {
+    // You should clone existing parser manually!
     p.prev = this as Parser<T>;
-    return p as Parser<R>;
+    return p;
   }
 
   fallback<R>(v: R): Parser<T | R, T> {

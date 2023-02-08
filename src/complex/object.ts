@@ -1,44 +1,85 @@
-import type { Parser } from "../base/parsing";
-import { Checker } from "../base/parsing";
-import type { WithOptionals } from "./optional";
+import { Checker, Parser } from "../base/parsing";
+import type { Result } from "../base/result";
+import { failure, success } from "../base/result";
+import type { OptKeys, WithOptionals } from "./optional";
 import { isOptionalParser } from "./optional";
 
-export function isObject(): Parser<object>;
-export function isObject<T>(shape: { [K in keyof T]: Parser<T[K]> }): Parser<
-  WithOptionals<T>
->;
-export function isObject<T>(shape?: { [K in keyof T]: Parser<T[K]> }):
-  | Parser<WithOptionals<T>>
-  | Parser<object> {
+export type Options = {
+  extraFields?: "KEEP" | "OMIT" | "DENY";
+};
+
+export function isObject<T = object>(): Parser<T>;
+export function isObject<T>(
+  shape: { [K in keyof T]: Parser<T[K]> },
+  options?: Options
+): Parser<WithOptionals<T>>;
+export function isObject<T>(
+  shape?: { [K in keyof T]: Parser<T[K]> },
+  options?: Options
+): Parser<WithOptionals<T>> | Parser<object> {
   if (!shape) {
     return new Checker((x) => isPlainObject(x), "is not a plain object");
   }
-  const keys = Object.keys(shape) as (keyof T)[];
+  const shapeKeys = Object.keys(shape) as OptKeys<T>[];
 
-  if (keys.every((k) => !shape[k].altering)) {
-    return (isObject() as Parser<WithOptionals<T>>).req((x) =>
-      keys.every(
-        (k) =>
-          (isOptionalParser(shape[k]) && !(k in x)) ||
-          shape[k].parse((x as T)[k]).ok
-      )
-    );
-  }
+  const { extraFields = "KEEP" }: Options = options ?? {};
 
-  return (isObject() as Parser<WithOptionals<T>>).mod((x) => {
-    const result = [] as unknown as T;
-    for (const k of keys) {
-      if (isOptionalParser(shape[k]) && !(k in x)) {
-        continue;
-      }
-      const r = shape[k].parse((x as T)[k]);
+  const altering =
+    extraFields === "OMIT" || shapeKeys.some((k) => shape[k].altering);
+
+  return isObject<WithOptionals<T>>().next(
+    new Parser(altering, (r) => {
       if (!r.ok) {
-        throw r.error;
+        return r as Result<WithOptionals<T>>;
       }
-      result[k] = r.value;
-    }
-    return result as WithOptionals<T>;
-  });
+
+      const x = r.value;
+      const result = {} as unknown as WithOptionals<T>;
+
+      const extraKeys = (Object.keys(x) as OptKeys<T>[]).filter(
+        (k) => !shape[k]
+      );
+
+      if (extraKeys.length > 0 && extraFields === "DENY") {
+        const more = extraKeys.length > 3;
+        const ks = extraKeys.slice(0, 3).map((k) => `"${String(k)}"`);
+        return failure(
+          `has extra ${extraKeys.length > 1 ? "fields" : "field"} ${ks.join(
+            ", "
+          )}${more ? "..." : ""}`
+        );
+      }
+
+      for (const k of shapeKeys) {
+        const p = shape[k] as Parser<WithOptionals<T>[OptKeys<T>]>;
+        const opt = isOptionalParser(p);
+        if (opt && !(k in x)) {
+          continue;
+        }
+        if (!opt && !(k in x)) {
+          return failure("is missing", `.${String(k)}`);
+        }
+        const r1 = p.parse(x[k]);
+        if (!r1.ok) {
+          r1.error.prependPath(`.${String(k)}`);
+          return r1 as Result<WithOptionals<T>>;
+        }
+        if (altering) {
+          result[k] = r1.value;
+        }
+      }
+
+      if (altering && extraFields === "KEEP") {
+        for (const k of extraKeys) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          result[k] = x[k];
+        }
+      }
+
+      return (altering ? success(result) : r) as Result<WithOptionals<T>>;
+    })
+  ) as Parser<WithOptionals<T>>;
 }
 
 function isPlainObject(v: unknown): v is object {
