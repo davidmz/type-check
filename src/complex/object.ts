@@ -1,4 +1,4 @@
-import { Checker, Parser } from "../base/parsing";
+import { Parser, pass } from "../base/parsing";
 import type { Result } from "../base/result";
 import { failure, success } from "../base/result";
 import type { OptKeys, WithOptionals } from "./optional";
@@ -18,7 +18,10 @@ export function isObject<T>(
   options?: Options
 ): Parser<WithOptionals<T>> | Parser<object> {
   if (!shape) {
-    return new Checker((x) => isPlainObject(x), "is not a plain object");
+    return pass<WithOptionals<T>>().and(
+      (x) => isPlainObject(x),
+      "is not a plain object"
+    );
   }
   const shapeKeys = Object.keys(shape) as OptKeys<T>[];
 
@@ -27,13 +30,13 @@ export function isObject<T>(
   const altering =
     extraFields === "OMIT" || shapeKeys.some((k) => shape[k].altering);
 
-  return isObject<WithOptionals<T>>().next(
+  return isObject<WithOptionals<T>>().and(
     new Parser(altering, (r) => {
       if (!r.ok) {
         return r as Result<WithOptionals<T>>;
       }
 
-      const x = r.value;
+      const x = r.value as WithOptionals<T>;
       const result = {} as unknown as WithOptionals<T>;
 
       const extraKeys = (Object.keys(x) as OptKeys<T>[]).filter(

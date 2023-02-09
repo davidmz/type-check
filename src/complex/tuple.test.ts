@@ -10,7 +10,7 @@ describe("Tuple", () => {
     isString(),
     isNumber(),
     isTuple(
-      isString().mod((x) => x.toUpperCase()),
+      isString().andAlter((x) => x.toUpperCase()),
       isNumber()
     )
   );

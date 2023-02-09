@@ -31,7 +31,7 @@ describe("Array without subtypes", () => {
 
 describe("Array with type", () => {
   const p = isArray(isString());
-  const pAltering = isArray(isString().mod((x) => x.toUpperCase()));
+  const pAltering = isArray(isString().andAlter((x) => x.toUpperCase()));
 
   it("should not take non-array", () => {
     const r = p.parse(43);

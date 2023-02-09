@@ -34,7 +34,7 @@ const optionalParsers = new WeakSet<Parser<unknown>>();
 
 export function isOptional<T>(p: Parser<T>) {
   // Clone
-  const opt = p.req(() => true) as Parser<Optional<T>>;
+  const opt = p.and(() => true) as Parser<Optional<T>>;
   optionalParsers.add(opt);
   return opt;
 }

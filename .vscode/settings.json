@@ -3,5 +3,11 @@
     "source.organizeImports",
     "source.fixAll.eslint"
   ],
-  "eslint.validate": ["javascript", "typescript", "typescriptreact"]
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "typescriptreact"
+  ],
+  "vitest.enable": true,
+  "vitest.commandLine": "pnpm test --"
 }

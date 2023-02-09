@@ -82,7 +82,7 @@ describe("Object with subtypes", () => {
     });
 
     it("should keep extra fields on altering parse", () => {
-      const r = isObject({ a: isNumber().mod((x) => x + 1) }).parse({
+      const r = isObject({ a: isNumber().andAlter((x) => x + 1) }).parse({
         a: 1,
         b: 2,
       });

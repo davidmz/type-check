@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Success } from "./base/result";
 import { success } from "./base/result";
 import { isString } from "./primitives";
-import { isEqual, withFallback } from "./utility";
+import { isEqual } from "./utility";
 
 describe("Primitives", () => {
   it("should parse string as string", () => {
@@ -18,21 +18,21 @@ describe("Primitives", () => {
 
   it("should parse string with length limit", () => {
     const res = isString()
-      .req((x) => x.length > 5)
+      .and((x) => x.length > 5)
       .parse("foo");
     expect(res.ok).toBe(false);
   });
 
   it("should parse string with length limit (with error)", () => {
     const res = isString()
-      .req((x) => x.length < 5)
+      .and((x) => x.length < 5)
       .parse("foo");
     expect(res.ok).toBe(true);
   });
 
   it("should transform string to number", () => {
     const res = isString()
-      .mod((x) => x.length)
+      .andAlter((x) => x.length)
       .parse("foo");
     expect(res.ok).toBe(true);
     expect((res as Success<number>).value).toBe(3);
@@ -40,7 +40,7 @@ describe("Primitives", () => {
 
   it("should transform string to uppercase", () => {
     const res = isString()
-      .mod((x) => x.toUpperCase())
+      .andAlter((x) => x.toUpperCase())
       .parse("foo");
     expect(res.ok).toBe(true);
     expect((res as Success<string>).value).toBe("FOO");
@@ -57,10 +57,9 @@ describe("Primitives", () => {
   });
 
   it("should work with fallback", () => {
-    const p = withFallback(
-      isString().req((x) => x.length > 3),
-      "123"
-    );
+    const p = isString()
+      .and((x) => x.length > 3)
+      .fallback("123");
     expect(p.parse("fooo")).toEqual(success("fooo"));
     expect(p.parse("foo")).toEqual(success("123"));
     expect(p.parse(321)).toEqual(success("123"));

@@ -17,19 +17,42 @@ export class Parser<T, I = unknown> {
     return this.process(this.prev ? this.prev.parse(x) : success(x as I));
   }
 
-  req(check: (x: T) => boolean, failMsg = "check failed"): Parser<T> {
-    return this.next(new Checker(check, failMsg)) as Parser<T>;
+  andAlter<R>(tr: (x: T) => R): Parser<R> {
+    return this.next<R>(
+      new Parser(true, (r) => {
+        if (!r.ok) {
+          return r;
+        }
+
+        try {
+          return success(tr(r.value as T));
+        } catch (error) {
+          return failure(error);
+        }
+      })
+    ) as Parser<R>;
   }
 
-  mod<R>(tr: (x: T) => R): Parser<R> {
-    return this.next(new Transformer(tr)) as Parser<R>;
+  and(another: Parser<T>): Parser<T>;
+  and(check: (x: T) => boolean, failMsg?: string): Parser<T>;
+  and(
+    check: Parser<T> | ((x: T) => boolean),
+    failMsg = "check failed"
+  ): Parser<T> {
+    if (!(check instanceof Parser)) {
+      const chk = check;
+      check = new Parser<T, T>(false, (r) =>
+        !r.ok || chk(r.value) ? r : failure(failMsg)
+      ) as Parser<T>;
+    }
+    return this.next(check) as Parser<T>;
   }
 
   clone(): Parser<T, I> {
-    return this.req(() => true);
+    return this.and(() => true);
   }
 
-  next<U>(p: Parser<U, T>): Parser<U, T> {
+  protected next<U = T>(p: Parser<U>): Parser<U> {
     // You should clone existing parser manually!
     p.prev = this as Parser<T>;
     return p;
@@ -45,32 +68,6 @@ export class Parser<T, I = unknown> {
   }
 }
 
-export class Checker<T, I = T> extends Parser<T, I> {
-  constructor(
-    private readonly check: (x: I) => boolean,
-    private failMsg: string
-  ) {
-    super(false, (r) => {
-      if (!r.ok || this.check(r.value)) {
-        return r as Result<T>;
-      }
-      return failure(this.failMsg);
-    });
-  }
-}
-
-export class Transformer<T, I> extends Parser<T, I> {
-  constructor(private readonly transform: (x: I) => T) {
-    super(true, (r) => {
-      if (!r.ok) {
-        return r;
-      }
-
-      try {
-        return success(this.transform(r.value));
-      } catch (error) {
-        return failure(error);
-      }
-    });
-  }
+export function pass<T = unknown>() {
+  return new Parser<T, T>(false, (r) => r);
 }
