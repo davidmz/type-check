@@ -1,13 +1,13 @@
-import { Parser, pass } from "../base/parsing";
-import type { Result } from "../base/result";
+import { Parser } from "../base/parsing";
 import { success } from "../base/result";
+import { isUnknown } from "../primitives";
 
 export function isArray<T = unknown>(): Parser<T[]>;
 export function isArray<T = unknown>(len: number): Parser<T[]>;
 export function isArray<T>(p: Parser<T>): Parser<T[]>;
 export function isArray<T>(p?: number | Parser<T>): Parser<T[]> {
   if (!p) {
-    return pass<T[]>().and((x) => Array.isArray(x), "is not an array");
+    return isUnknown().and((x) => Array.isArray(x), "is not an array");
   }
 
   if (typeof p === "number") {
@@ -15,12 +15,12 @@ export function isArray<T>(p?: number | Parser<T>): Parser<T[]> {
   }
 
   return isArray<T>().and(
-    new Parser<T[]>(p.altering, (r) => {
+    new Parser(p.altering, (r) => {
       if (!r.ok) {
         return r;
       }
       const result = [] as unknown as T[];
-      const arr = r.value as T[];
+      const arr = r.value;
       for (let i = 0; i < arr.length; i++) {
         const r1 = p.parse(arr[i]);
         if (!r1.ok) {
@@ -29,7 +29,7 @@ export function isArray<T>(p?: number | Parser<T>): Parser<T[]> {
         }
         p.altering && result.push(r1.value);
       }
-      return p.altering ? success(result) : (r as Result<T[]>);
+      return p.altering ? success(result) : r;
     })
   ) as Parser<T[]>;
 }

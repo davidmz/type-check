@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { isArray } from "./complex/array";
 import { isString } from "./primitives";
 
-describe("Primitives", () => {
+describe("Complex", () => {
   it(`should parse and keep array unmodified`, () => {
     const data = ["foo", "bar"];
     const parser = isArray(isString());

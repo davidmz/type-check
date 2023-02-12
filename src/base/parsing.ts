@@ -14,60 +14,58 @@ export class Parser<T, I = unknown> {
   }
 
   parse(x: unknown): Result<T> {
-    return this.process(this.prev ? this.prev.parse(x) : success(x as I));
+    return this.process(
+      (this.prev ? this.prev.parse(x) : success(x)) as Result<I>
+    );
   }
 
-  andAlter<R>(tr: (x: T) => R): Parser<R> {
-    return this.next<R>(
-      new Parser(true, (r) => {
+  andAlter<U>(tr: (x: T) => U): Parser<U> {
+    return this.and(
+      new Parser<U, T>(true, (r) => {
         if (!r.ok) {
           return r;
         }
 
         try {
-          return success(tr(r.value as T));
+          return success(tr(r.value));
         } catch (error) {
           return failure(error);
         }
       })
-    ) as Parser<R>;
-  }
-
-  and(another: Parser<T>): Parser<T>;
-  and(check: (x: T) => boolean, failMsg?: string): Parser<T>;
-  and(
-    check: Parser<T> | ((x: T) => boolean),
-    failMsg = "check failed"
-  ): Parser<T> {
-    if (!(check instanceof Parser)) {
-      const chk = check;
-      check = new Parser<T, T>(false, (r) =>
-        !r.ok || chk(r.value) ? r : failure(failMsg)
-      ) as Parser<T>;
-    }
-    return this.next(check) as Parser<T>;
-  }
-
-  clone(): Parser<T, I> {
-    return this.and(() => true);
-  }
-
-  protected next<U = T>(p: Parser<U>): Parser<U> {
-    // You should clone existing parser manually!
-    p.prev = this as Parser<T>;
-    return p;
-  }
-
-  fallback<R>(v: R): Parser<T | R, T> {
-    const p = new Parser<T | R, T>(
-      true,
-      (r: Result<T>): Result<T | R> => (r.ok ? r : success(v as R))
     );
-    p.prev = this as Parser<T>;
-    return p;
+  }
+
+  and<U>(another: Parser<U, T>): Parser<U>;
+  and<U = T>(check: (x: T) => boolean, failMsg?: string): Parser<U>;
+  and<U>(
+    check: Parser<U, T> | ((x: T) => boolean),
+    failMsg = "check failed"
+  ): Parser<U> {
+    if (check instanceof Parser) {
+      check.prev = this as Parser<T>;
+      return check as Parser<U>;
+    }
+
+    return this.and(
+      new Parser<U, T>(false, (r) =>
+        !r.ok || check(r.value as T) ? (r as Result<U>) : failure(failMsg)
+      )
+    );
+  }
+
+  clone<U = T>(altering = false): Parser<U> {
+    return this.and(pass(altering));
+  }
+
+  fallback<R>(v: R): Parser<T | R> {
+    return this.and(
+      new Parser<T | R>(true, (r) =>
+        r.ok ? (r as Result<T>) : success(v as R)
+      )
+    );
   }
 }
 
-export function pass<T = unknown>() {
-  return new Parser<T, T>(false, (r) => r);
+export function pass<T = unknown>(altering = false) {
+  return new Parser(altering, (r) => r as Result<T>);
 }

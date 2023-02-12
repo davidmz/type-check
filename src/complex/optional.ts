@@ -32,9 +32,8 @@ export type OptKeys<T> = keyof WithOptionals<T>;
 
 const optionalParsers = new WeakSet<Parser<unknown>>();
 
-export function isOptional<T>(p: Parser<T>) {
-  // Clone
-  const opt = p.and(() => true) as Parser<Optional<T>>;
+export function isOptional<T>(p: Parser<T>): Parser<Optional<T>> {
+  const opt = p.clone<Optional<T>>();
   optionalParsers.add(opt);
   return opt;
 }

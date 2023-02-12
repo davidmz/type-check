@@ -1,5 +1,5 @@
 export class ParseError extends TypeError {
-  constructor(protected _message: string, public path: string = "") {
+  constructor(public reason: string, public path: string = "") {
     super();
     this.name = "ParseError";
     this.prependPath();
@@ -7,6 +7,6 @@ export class ParseError extends TypeError {
 
   prependPath(p = "") {
     this.path = p + this.path;
-    this.message = `$${this.path} ${this._message}`;
+    this.message = `$${this.path} ${this.reason}`;
   }
 }

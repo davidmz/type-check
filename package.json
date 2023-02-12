@@ -45,7 +45,7 @@
   "size-limit": [
     {
       "path": "build/esm/index.js",
-      "import": "{ isObject, isArray, isString, isNumber, isBoolean, isOptional, isOneOf }",
+      "import": "{ isObject, isArray, isString, isNumber, isSome }",
       "limit": "1000 B"
     }
   ]

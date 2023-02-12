@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Success } from "./base/result";
 import { success } from "./base/result";
 import { isString } from "./primitives";
-import { isEqual } from "./utility";
+import { isEqual } from "./utility/equal";
 
 describe("Primitives", () => {
   it("should parse string as string", () => {

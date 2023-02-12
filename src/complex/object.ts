@@ -1,6 +1,7 @@
-import { Parser, pass } from "../base/parsing";
+import { Parser } from "../base/parsing";
 import type { Result } from "../base/result";
 import { failure, success } from "../base/result";
+import { isUnknown } from "../primitives";
 import type { OptKeys, WithOptionals } from "./optional";
 import { isOptionalParser } from "./optional";
 
@@ -18,10 +19,7 @@ export function isObject<T>(
   options?: Options
 ): Parser<WithOptionals<T>> | Parser<object> {
   if (!shape) {
-    return pass<WithOptionals<T>>().and(
-      (x) => isPlainObject(x),
-      "is not a plain object"
-    );
+    return isUnknown().and((x) => isPlainObject(x), "is not a plain object");
   }
   const shapeKeys = Object.keys(shape) as OptKeys<T>[];
 
@@ -30,18 +28,20 @@ export function isObject<T>(
   const altering =
     extraFields === "OMIT" || shapeKeys.some((k) => shape[k].altering);
 
-  return isObject<WithOptionals<T>>().and(
-    new Parser(altering, (r) => {
+  return isObject().and(
+    new Parser<WithOptionals<T>, WithOptionals<T>>(altering, (r) => {
       if (!r.ok) {
-        return r as Result<WithOptionals<T>>;
+        return r;
       }
 
-      const x = r.value as WithOptionals<T>;
+      const obj = r.value;
       const result = {} as unknown as WithOptionals<T>;
 
-      const extraKeys = (Object.keys(x) as OptKeys<T>[]).filter(
+      const extraKeys = (Object.keys(obj) as OptKeys<T>[]).filter(
         (k) => !shape[k]
       );
+      const existingKeys = shapeKeys.filter((k) => k in obj);
+      const missingKeys = shapeKeys.filter((k) => !(k in obj));
 
       if (extraKeys.length > 0 && extraFields === "DENY") {
         const more = extraKeys.length > 3;
@@ -53,16 +53,18 @@ export function isObject<T>(
         );
       }
 
-      for (const k of shapeKeys) {
+      // Missing keys
+      for (const k of missingKeys) {
         const p = shape[k] as Parser<WithOptionals<T>[OptKeys<T>]>;
-        const opt = isOptionalParser(p);
-        if (opt && !(k in x)) {
-          continue;
-        }
-        if (!opt && !(k in x)) {
+        if (!isOptionalParser(p)) {
           return failure("is missing", `.${String(k)}`);
         }
-        const r1 = p.parse(x[k]);
+      }
+
+      // Existing keys
+      for (const k of existingKeys) {
+        const p = shape[k] as Parser<WithOptionals<T>[OptKeys<T>]>;
+        const r1 = p.parse(obj[k]);
         if (!r1.ok) {
           r1.error.prependPath(`.${String(k)}`);
           return r1 as Result<WithOptionals<T>>;
@@ -76,13 +78,13 @@ export function isObject<T>(
         for (const k of extraKeys) {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
-          result[k] = x[k];
+          result[k] = obj[k];
         }
       }
 
-      return (altering ? success(result) : r) as Result<WithOptionals<T>>;
-    })
-  ) as Parser<WithOptionals<T>>;
+      return altering ? success(result) : r;
+    }) as Parser<WithOptionals<T>>
+  );
 }
 
 function isPlainObject(v: unknown): v is object {
