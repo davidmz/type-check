@@ -6,7 +6,7 @@ export function isTuple<T extends [unknown, ...unknown[]]>(
   ...parsers: { [K in keyof T]: Parser<T[K]> }
 ): Parser<T> {
   const altering = parsers.some((p) => p.altering);
-  return (isArray(parsers.length) as Parser<T>).and(
+  return isArray(parsers.length).and(
     new Parser(altering, (r) => {
       if (!r.ok) {
         return r;

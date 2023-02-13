@@ -11,10 +11,10 @@ export function isArray<T>(p?: number | Parser<T>): Parser<T[]> {
   }
 
   if (typeof p === "number") {
-    return isArray<T>().and((x) => x.length === p, "has invalid length");
+    return isArray().and((x) => x.length === p, "has invalid length");
   }
 
-  return isArray<T>().and(
+  return isArray().and(
     new Parser(p.altering, (r) => {
       if (!r.ok) {
         return r;
