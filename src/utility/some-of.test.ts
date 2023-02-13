@@ -14,12 +14,26 @@ describe("isSomeOf", () => {
     expectSuccess(p.parse(42), 42);
   });
 
+  it("should do the same with 'or'", () => {
+    const p = isString().or(isNumber());
+
+    expectSuccess(p.parse("foo"), "foo");
+    expectSuccess(p.parse(42), 42);
+  });
+
   it("should not pass invalid value", () => {
     const p = isSomeOf(isString(), isNumber());
 
     expectFailure(
       p.parse({}),
       new ParseError("is not a string and is not a number")
+    );
+  });
+
+  it("should not pass invalid value with 'or'", () => {
+    expectFailure(
+      isString().or(isNumber()).parse({}),
+      new ParseError("is not a number")
     );
   });
 

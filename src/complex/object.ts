@@ -47,6 +47,7 @@ export function isObject<T>(
         const more = extraKeys.length > 3;
         const ks = extraKeys.slice(0, 3).map((k) => `"${String(k)}"`);
         return failure(
+          obj,
           `has extra ${extraKeys.length > 1 ? "fields" : "field"} ${ks.join(
             ", "
           )}${more ? "..." : ""}`
@@ -57,7 +58,7 @@ export function isObject<T>(
       for (const k of missingKeys) {
         const p = shape[k] as Parser<WithOptionals<T>[OptKeys<T>]>;
         if (!isOptionalParser(p)) {
-          return failure("is missing", `.${String(k)}`);
+          return failure(obj, "is missing", `.${String(k)}`);
         }
       }
 

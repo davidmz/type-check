@@ -1,4 +1,4 @@
-import type { Result } from "./result";
+import type { Result, Success } from "./result";
 import { failure, success } from "./result";
 
 export class Parser<T, I = unknown> {
@@ -29,7 +29,7 @@ export class Parser<T, I = unknown> {
         try {
           return success(tr(r.value));
         } catch (error) {
-          return failure(error);
+          return failure(r.value, error);
         }
       })
     );
@@ -47,22 +47,36 @@ export class Parser<T, I = unknown> {
     }
 
     return this.and(
-      new Parser<U, T>(false, (r) =>
-        !r.ok || check(r.value as T) ? (r as Result<U>) : failure(failMsg)
-      )
+      new Parser<U, T>(false, (r) => {
+        if (!r.ok) {
+          return r;
+        }
+        if (check(r.value)) {
+          return success(r.value) as Result<U>;
+        }
+        return failure(r.value, failMsg);
+      })
+    );
+  }
+
+  or<U>(value: U): Parser<U | T>;
+  or<U>(other: Parser<U>): Parser<U | T>;
+  or<U>(other: U | Parser<U>): Parser<U | T> {
+    return this.and(
+      new Parser<U | T>(true, (r) => {
+        if (r.ok) {
+          return r as Success<T>;
+        }
+        if (other instanceof Parser) {
+          return other.parse(r.value);
+        }
+        return success<U>(other);
+      })
     );
   }
 
   clone<U = T>(altering = false): Parser<U> {
     return this.and(pass(altering));
-  }
-
-  fallback<R>(v: R): Parser<T | R> {
-    return this.and(
-      new Parser<T | R>(true, (r) =>
-        r.ok ? (r as Result<T>) : success(v as R)
-      )
-    );
   }
 }
 

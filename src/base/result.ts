@@ -3,6 +3,7 @@ import { ParseError } from "./error";
 export type Success<T> = { readonly ok: true; readonly value: T };
 export type Failure = {
   readonly ok: false;
+  readonly value: unknown;
   readonly error: ParseError;
 };
 
@@ -12,7 +13,11 @@ export function success<T>(value: T): Result<T> {
   return { ok: true, value };
 }
 
-export function failure<T>(error: unknown, prependPath = ""): Result<T> {
+export function failure<T>(
+  value: unknown,
+  error: unknown,
+  prependPath = ""
+): Result<T> {
   let parseError: ParseError;
   if (error instanceof ParseError) {
     parseError = error;
@@ -26,5 +31,5 @@ export function failure<T>(error: unknown, prependPath = ""): Result<T> {
 
   parseError.prependPath(prependPath);
 
-  return { ok: false, error: parseError };
+  return { ok: false, value, error: parseError };
 }

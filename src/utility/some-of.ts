@@ -21,6 +21,7 @@ export function isSomeOf<T extends [unknown, unknown, ...unknown[]]>(
     }
 
     return failure(
+      r.value,
       errors.map((e) => e.message.replace(/^\$\s?/, "")).join(" and ")
     );
   });

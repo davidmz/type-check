@@ -59,7 +59,7 @@ describe("Primitives", () => {
   it("should work with fallback", () => {
     const p = isString()
       .and((x) => x.length > 3)
-      .fallback("123");
+      .or("123");
     expectSuccess(p.parse("fooo"), "fooo");
     expectSuccess(p.parse("foo"), "123");
     expectSuccess(p.parse(321), "123");
