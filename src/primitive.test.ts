@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import type { Success } from "./base/result";
-import { success } from "./base/result";
 import { isString } from "./primitives";
 import { isEqual } from "./utility/equal";
+import { expectFailure, expectSuccess } from "./utility/test-helpers";
 
 describe("Primitives", () => {
   it("should parse string as string", () => {
@@ -53,15 +53,15 @@ describe("Primitives", () => {
 
   it("should test for constant (and fail)", () => {
     const res = isEqual(42 as const).parse(43);
-    expect(res.ok).toBe(false);
+    expectFailure(res);
   });
 
   it("should work with fallback", () => {
     const p = isString()
       .and((x) => x.length > 3)
       .fallback("123");
-    expect(p.parse("fooo")).toEqual(success("fooo"));
-    expect(p.parse("foo")).toEqual(success("123"));
-    expect(p.parse(321)).toEqual(success("123"));
+    expectSuccess(p.parse("fooo"), "fooo");
+    expectSuccess(p.parse("foo"), "123");
+    expectSuccess(p.parse(321), "123");
   });
 });
