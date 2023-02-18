@@ -48,7 +48,7 @@ describe("Primitives", () => {
 
   it("should test for constant", () => {
     const res = isEqual(42).parse(42);
-    expect(res).toEqual({ ok: true, value: 42 });
+    expectSuccess(res, 42);
   });
 
   it("should test for constant (and fail)", () => {
