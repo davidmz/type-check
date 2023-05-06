@@ -2,4 +2,4 @@ export { isArray, isObject, isOptional, isTuple } from "./complex";
 export { isBoolean, isNull, isNumber, isString, isUnknown } from "./primitives";
 export { isEqual } from "./utility/equal";
 export { type Parsed } from "./utility/parsed";
-export { isSomeOf as isSome } from "./utility/some-of";
+export { isSomeOf } from "./utility/some-of";
