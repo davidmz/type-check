@@ -1,5 +1,5 @@
-import type { Result, Success } from "./result";
-import { failure, success } from "./result";
+import type { Result } from "./result";
+import { failure, isResult, success } from "./result";
 
 export class Parser<T, I = unknown> {
   protected prev?: Parser<I>;
@@ -14,9 +14,8 @@ export class Parser<T, I = unknown> {
   }
 
   parse(x: unknown): Result<T> {
-    return this.process(
-      (this.prev ? this.prev.parse(x) : success(x)) as Result<I>
-    );
+    const r0 = isResult<I>(x) ? x : success(x as I);
+    return this.process(this.prev ? this.prev.parse(r0) : r0);
   }
 
   andAlter<U>(tr: (x: T) => U): Parser<U> {
@@ -27,9 +26,9 @@ export class Parser<T, I = unknown> {
         }
 
         try {
-          return success(tr(r.value));
+          return success(tr(r.value as T));
         } catch (error) {
-          return failure(r.value, error);
+          return failure(r.value as unknown, error);
         }
       })
     );
@@ -42,8 +41,9 @@ export class Parser<T, I = unknown> {
     failMsg = "check failed"
   ): Parser<U> {
     if (check instanceof Parser) {
-      check.prev = this as Parser<T>;
-      return check as Parser<U>;
+      const chk = check.prev ? check.clone() : check;
+      chk.prev = this as Parser<T>;
+      return chk as Parser<U>;
     }
 
     return this.and(
@@ -65,7 +65,7 @@ export class Parser<T, I = unknown> {
     return this.and(
       new Parser<U | T>(true, (r) => {
         if (r.ok) {
-          return r as Success<T>;
+          return r as Result<T>;
         }
         if (other instanceof Parser) {
           return other.parse(r.value);

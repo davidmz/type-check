@@ -3,8 +3,7 @@ import { describe, it } from "vitest";
 import { ParseError } from "../base/error";
 import { isNumber, isString } from "../primitives";
 import { expectFailure, expectSuccess } from "../utility/test-helpers";
-import { isObject } from "./object";
-import { isOptional } from "./optional";
+import { isObject, isOptional } from "./object";
 
 describe("Object without subtypes", () => {
   it("should not take non-object", () => {
@@ -50,6 +49,11 @@ describe("Object with subtypes", () => {
   it("should take object with valid optional field", () => {
     const r = isObject({ a: isOptional(isString()) }).parse({ a: "b" });
     expectSuccess(r, { a: "b" });
+  });
+
+  it("should take object with optional field with default value", () => {
+    const r = isObject({ a: isString().or("bar") }).parse({ b: "foo" });
+    expectSuccess(r, { a: "bar", b: "foo" });
   });
 
   it("should not take object with deep missing field", () => {

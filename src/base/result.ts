@@ -1,6 +1,10 @@
 import { ParseError } from "./error";
 
-export type Success<T> = { readonly ok: true; readonly value: T };
+export type Success<T> = {
+  readonly ok: true;
+  readonly value: T;
+};
+
 export type Failure = {
   readonly ok: false;
   readonly value: unknown;
@@ -9,15 +13,26 @@ export type Failure = {
 
 export type Result<T> = Success<T> | Failure;
 
-export function success<T>(value: T): Result<T> {
-  return { ok: true, value };
+class Res<T> {
+  public constructor(
+    public readonly value: T,
+    public readonly error: ParseError | null
+  ) {}
+
+  public get ok(): boolean {
+    return !this.error;
+  }
 }
 
-export function failure<T>(
-  value: unknown,
-  error: unknown,
-  prependPath = ""
-): Result<T> {
+export function isResult<T = unknown>(x: unknown): x is Result<T> {
+  return x instanceof Res;
+}
+
+export function success<T>(value: T) {
+  return new Res(value, null) as Result<T>;
+}
+
+export function failure<T>(value: unknown, error: unknown) {
   let parseError: ParseError;
   if (error instanceof ParseError) {
     parseError = error;
@@ -29,7 +44,5 @@ export function failure<T>(
     parseError = new ParseError("threw unexpected error");
   }
 
-  parseError.prependPath(prependPath);
-
-  return { ok: false, value, error: parseError };
+  return new Res(value, parseError) as Result<T>;
 }

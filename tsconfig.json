@@ -3,7 +3,7 @@
     "outDir": "./build/cjs/",
     "sourceMap": true,
     "target": "es6",
-    "lib": ["ES2017"],
+    "lib": ["ES2017", "dom"],
 
     "moduleResolution": "node",
     "module": "commonjs",

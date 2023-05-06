@@ -1,4 +1,3 @@
 export { isArray } from "./array";
-export { isObject } from "./object";
-export { isOptional } from "./optional";
+export { isObject, isOptional } from "./object";
 export { isTuple } from "./tuple";
